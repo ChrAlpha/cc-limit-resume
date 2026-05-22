@@ -62,10 +62,18 @@ export function getSession(id: string): Session | null {
   return index.sessions[id] ?? null;
 }
 
-export function getLatestSession(): Session | null {
+export function getLatestSession(tool?: "claude" | "codex"): Session | null {
   const index = loadIndex();
-  if (!index.latest_session_id) return null;
-  return index.sessions[index.latest_session_id] ?? null;
+  if (!tool) {
+    if (!index.latest_session_id) return null;
+    return index.sessions[index.latest_session_id] ?? null;
+  }
+  let latest: Session | null = null;
+  for (const s of Object.values(index.sessions)) {
+    if ((s.tool ?? "claude") !== tool) continue;
+    if (!latest || s.updated_at > latest.updated_at) latest = s;
+  }
+  return latest;
 }
 
 export function upsertSession(session: Session): IndexData {
