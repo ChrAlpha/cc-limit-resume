@@ -1,0 +1,3 @@
+#!/bin/sh
+# stop-failure-log — pipe Claude Code StopFailure hook JSON to cc-limit-resume
+cc-limit-resume log-stop-failure
