@@ -48,6 +48,7 @@ export function applyStatusline(input: StatuslineInput): Session {
       max_runs: 1,
       runs_used: 0,
       resume_prompt: "",
+      tool: "claude",
     };
   } else {
     if (input.session_name !== undefined) session.session_name = input.session_name;
@@ -57,6 +58,7 @@ export function applyStatusline(input: StatuslineInput): Session {
     if (input.workspace?.current_dir !== undefined && !session.cwd)
       session.cwd = input.workspace.current_dir;
     if (input.transcript_path !== undefined) session.transcript_path = input.transcript_path;
+    if (!session.tool) session.tool = "claude";
   }
 
   session.last_statusline_at = now;

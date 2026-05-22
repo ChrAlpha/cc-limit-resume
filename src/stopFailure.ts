@@ -42,10 +42,12 @@ export function applyStopFailure(input: StopFailureInput): Session | null {
       max_runs: 1,
       runs_used: 0,
       resume_prompt: "",
+      tool: "claude",
     };
   } else {
     if (input.cwd !== undefined) session.cwd = input.cwd;
     if (input.transcript_path !== undefined) session.transcript_path = input.transcript_path;
+    if (!session.tool) session.tool = "claude";
   }
 
   session.last_failure_at = now;

@@ -38,6 +38,7 @@ describe("applyStopFailure", () => {
     const session = applyStopFailure(input);
     expect(session).not.toBeNull();
     expect(session!.session_id).toBe("test-fail-1");
+    expect(session!.tool).toBe("claude");
     expect(session!.last_failure_error).toBe("rate_limit");
     expect(session!.last_failure_at).toBeGreaterThan(0);
     expect(session!.last_assistant_message).toBe("Rate limit reached");
@@ -51,6 +52,7 @@ describe("applyStopFailure", () => {
 
     const session = applyStopFailure(input);
     expect(session).not.toBeNull();
+    expect(session!.tool).toBe("claude");
     expect(session!.last_failure_error).toBe("authentication_failed");
   });
 

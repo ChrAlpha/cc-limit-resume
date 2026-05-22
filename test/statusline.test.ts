@@ -57,6 +57,7 @@ describe("applyStatusline", () => {
 
     const session = applyStatusline(input);
     expect(session.session_id).toBe("test-session-1");
+    expect(session.tool).toBe("claude");
     expect(session.session_name).toBe("test");
     expect(session.cwd).toBe("/tmp/project");
     expect(session.transcript_path).toBe("/tmp/t.jsonl");
@@ -76,6 +77,7 @@ describe("applyStatusline", () => {
 
     const session = applyStatusline(input);
     expect(session.session_id).toBe("test-no-limits");
+    expect(session.tool).toBe("claude");
     expect(session.rate_limits).toBeUndefined();
   });
 });
