@@ -23,18 +23,12 @@ It stores minimal local state under `~/.local/state/cc-limit-resume/` (or `~/Lib
 - Does **not** restore interrupted subprocesses or subagents — it resumes from transcript and repository state.
 - Does **not** send telemetry, analytics, or network requests.
 
-## Install from source
+## First to Use
 
-Requirements: Node.js >= 20, pnpm.
+Requirements: Node.js >= 20.
 
 ```bash
-git clone https://github.com/user/cc-limit-resume.git
-cd cc-limit-resume
-pnpm install
-pnpm build
-
-# Optional: link globally so `cc-limit-resume` is available from anywhere
-pnpm link --global
+npx cc-limit-resume status
 ```
 
 ## Usage flow
@@ -129,14 +123,19 @@ cc-limit-resume arm --manual \
 
 ## Plugin installation
 
-Copy or symlink the plugin into your Claude Code plugins directory:
+### From npm (recommended)
+
+After installing the CLI globally, symlink the bundled plugin:
 
 ```bash
-# Link the plugin
-ln -s "$(pwd)/claude-plugin" ~/.claude/plugins/cc-limit-resume
+ln -s "$(npm root -g)/cc-limit-resume/claude-plugin" ~/.claude/plugins/cc-limit-resume
 ```
 
-Or install via Claude Code plugin registry once available.
+### From source
+
+```bash
+ln -s "$(pwd)/claude-plugin" ~/.claude/plugins/cc-limit-resume
+```
 
 The plugin provides:
 - A `/limit-resume-arm` skill to arm sessions from within Claude Code.

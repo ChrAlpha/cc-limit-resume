@@ -3,9 +3,8 @@
   "version": "0.1.0",
   "description": "Explicit one-shot Claude Code rate-limit resume helper",
   "type": "module",
-  "main": "./dist/cli.js",
   "bin": {
-    "cc-limit-resume": "./dist/cli.js"
+    "cc-limit-resume": "./dist/cli.mjs"
   },
   "files": [
     "dist",
@@ -13,10 +12,12 @@
     "claude-plugin"
   ],
   "scripts": {
-    "build": "tsup src/cli.ts --format esm --out-dir dist --clean",
+    "build": "tsdown",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepack": "pnpm build",
+    "prepublishOnly": "pnpm test"
   },
   "keywords": [
     "claude-code",
@@ -25,7 +26,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "tsup": "^8.5.1",
+    "tsdown": "^0.22.0",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "vitest": "^3.1.5"
@@ -35,5 +36,9 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "exports": {
+    ".": "./dist/cli.mjs",
+    "./package.json": "./package.json"
   }
 }
