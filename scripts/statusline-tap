@@ -1,0 +1,3 @@
+#!/bin/sh
+# statusline-tap — pipe Claude Code statusline JSON to cc-limit-resume
+cc-limit-resume tap-statusline
