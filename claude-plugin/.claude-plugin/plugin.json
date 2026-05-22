@@ -1,0 +1,7 @@
+{
+  "name": "cc-limit-resume",
+  "version": "0.1.0",
+  "description": "Explicit one-shot resume helper after Claude Code rate-limit reset.",
+  "author": "cc-limit-resume contributors",
+  "license": "MIT"
+}
