@@ -1,0 +1,5 @@
+{
+  "name": "cc-limit-resume",
+  "version": "0.1.0",
+  "description": "Rate-limit resume hook plugin for Codex CLI"
+}

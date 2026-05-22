@@ -1,0 +1,8 @@
+{
+  "hooks": {
+    "Stop": {
+      "command": "cc-limit-resume tap-codex-stop",
+      "matcher": ""
+    }
+  }
+}

@@ -9,7 +9,8 @@
   "files": [
     "dist",
     "scripts",
-    "claude-plugin"
+    "claude-plugin",
+    "codex-plugin"
   ],
   "scripts": {
     "build": "tsdown",
