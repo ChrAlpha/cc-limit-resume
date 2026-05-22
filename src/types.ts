@@ -24,6 +24,7 @@ export interface Session {
   max_runs: number;
   runs_used: number;
   resume_prompt: string;
+  tool?: "claude" | "codex";
 }
 
 export interface IndexData {
@@ -61,4 +62,12 @@ export interface StopFailureInput {
   error_details?: string;
   last_assistant_message?: string;
   hook_event_name?: string;
+}
+
+export interface CodexStopInput {
+  session_id?: string;
+  stop_reason?: string;
+  error?: string;
+  cwd?: string;
+  [key: string]: unknown;
 }
