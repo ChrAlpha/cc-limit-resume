@@ -5,7 +5,8 @@ import { processStopFailure } from "./stopFailure.js";
 import { loadIndex, getSession, getLatestSession, upsertSession, setArmed } from "./state.js";
 import { inferResetTime } from "./resetTime.js";
 import { countdownWait, formatCountdown, nowSeconds } from "./clock.js";
-import { buildResumePlan, executeResume, checkClaudeAvailable, defaultResumePrompt } from "./resume.js";
+import { processCodexStop } from "./codexStop.js";
+import { buildResumePlan, executeResume, checkClaudeAvailable, checkCodexAvailable, defaultResumePrompt } from "./resume.js";
 import type { Session } from "./types.js";
 
 const program = new Command();
@@ -43,6 +44,20 @@ program
     }
   });
 
+// ---- tap-codex-stop ----
+program
+  .command("tap-codex-stop")
+  .description("Read Codex CLI Stop hook JSON from stdin and update state on rate-limit")
+  .action(() => {
+    try {
+      processCodexStop();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`tap-codex-stop error: ${msg}`);
+      process.exit(1);
+    }
+  });
+
 // ---- arm ----
 program
   .command("arm")
@@ -55,6 +70,7 @@ program
   .option("--cwd <path>", "Working directory (manual only)")
   .option("--transcript-path <path>", "Transcript path (manual only)")
   .option("--reset <reset>", "Manual reset time (manual only)")
+  .option("--tool <tool>", "Tool to operate on (claude or codex)", "claude")
   .action((opts) => {
     try {
       let session: Session;
@@ -92,13 +108,15 @@ program
           updated_at: nowSeconds(),
           max_runs: parseInt(opts.maxRuns, 10) || 1,
           runs_used: 0,
-          resume_prompt: opts.resumePrompt || defaultResumePrompt(),
+          resume_prompt: opts.resumePrompt || defaultResumePrompt(opts.tool === "codex" ? "codex" : "claude"),
           manual_resets_at: manualResetsAt,
+          tool: opts.tool === "codex" ? "codex" : "claude",
         };
       } else {
+        const tool = opts.tool === "codex" ? "codex" : "claude";
         session = opts.session
           ? getSession(opts.session)
-          : getLatestSession();
+          : getLatestSession(tool);
 
         if (!session) {
           console.error(
@@ -110,7 +128,7 @@ program
       }
 
       const maxRuns = parseInt(opts.maxRuns, 10) || 1;
-      const resumePrompt = opts.resumePrompt || session.resume_prompt || defaultResumePrompt();
+      const resumePrompt = opts.resumePrompt || session.resume_prompt || defaultResumePrompt(session.tool);
 
       if (opts.manual) {
         session.armed = true;
@@ -146,11 +164,13 @@ program
   .option("--reset <reset>", "Override reset time")
   .option("--margin-seconds <n>", "Extra margin in seconds", "60")
   .option("--dry-run", "Show what would happen without waiting")
+  .option("--tool <tool>", "Tool to operate on (claude or codex)", "claude")
   .action(async (opts) => {
     try {
+      const tool = opts.tool === "codex" ? "codex" : "claude";
       const session = opts.session
         ? getSession(opts.session)
-        : getLatestSession();
+        : getLatestSession(tool);
 
       if (!session) {
         console.error(
@@ -218,11 +238,21 @@ program
       }
 
       // Resume
-      if (!checkClaudeAvailable()) {
-        console.error(
-          "`claude` command not found. Make sure the Claude Code CLI is installed and in your PATH.",
-        );
-        process.exit(1);
+      const sessionTool = session.tool ?? "claude";
+      if (sessionTool === "codex") {
+        if (!checkCodexAvailable()) {
+          console.error(
+            "`codex` command not found. Make sure the Codex CLI is installed and in your PATH.",
+          );
+          process.exit(1);
+        }
+      } else {
+        if (!checkClaudeAvailable()) {
+          console.error(
+            "`claude` command not found. Make sure the Claude Code CLI is installed and in your PATH.",
+          );
+          process.exit(1);
+        }
       }
 
       const plan = buildResumePlan({
@@ -246,14 +276,18 @@ program
   .option("--latest", "Use the latest session")
   .option("--session <id>", "Use a specific session ID")
   .option("--dry-run", "Show what would happen without resuming")
-  .option("--print-command", "Print the claude command that would be run")
+  .option("--print-command", "Print the command that would be run")
   .option("--force", "Resume even if not armed or max runs exceeded")
+  .option("--tool <tool>", "Tool to operate on (claude or codex)", "claude")
   .action((opts) => {
     try {
+      const tool = opts.tool === "codex" ? "codex" : "claude";
+
       if (opts.printCommand) {
         const plan = buildResumePlan({
           sessionId: opts.session,
           force: opts.force,
+          tool,
         });
         console.log(`${plan.command} ${plan.args.map((a) => `"${a}"`).join(" ")}`);
         process.exit(0);
@@ -263,6 +297,7 @@ program
         const plan = buildResumePlan({
           sessionId: opts.session,
           force: opts.force,
+          tool,
         });
         console.error(`Would resume session ${plan.session.session_id}`);
         console.error(`Command: ${plan.command} ${plan.args.map((a) => `"${a}"`).join(" ")}`);
@@ -271,17 +306,28 @@ program
         process.exit(0);
       }
 
-      if (!checkClaudeAvailable()) {
-        console.error(
-          "`claude` command not found. Make sure the Claude Code CLI is installed and in your PATH.",
-        );
-        process.exit(1);
-      }
-
       const plan = buildResumePlan({
         sessionId: opts.session,
         force: opts.force,
+        tool,
       });
+
+      const sessionTool = plan.session.tool ?? "claude";
+      if (sessionTool === "codex") {
+        if (!checkCodexAvailable()) {
+          console.error(
+            "`codex` command not found. Make sure the Codex CLI is installed and in your PATH.",
+          );
+          process.exit(1);
+        }
+      } else {
+        if (!checkClaudeAvailable()) {
+          console.error(
+            "`claude` command not found. Make sure the Claude Code CLI is installed and in your PATH.",
+          );
+          process.exit(1);
+        }
+      }
 
       console.error(`Resuming session ${plan.session.session_id}...`);
       process.exit(executeResume(plan));
@@ -298,6 +344,7 @@ program
   .description("Show current state")
   .option("--json", "Output as JSON")
   .option("--session <id>", "Show specific session")
+  .option("--tool <tool>", "Tool to filter by (claude or codex)")
   .action((opts) => {
     try {
       if (opts.json) {
@@ -315,9 +362,10 @@ program
         process.exit(0);
       }
 
+      const toolFilter = opts.tool === "codex" ? "codex" : opts.tool === "claude" ? "claude" : undefined;
       const session = opts.session
         ? getSession(opts.session)
-        : getLatestSession();
+        : getLatestSession(toolFilter);
 
       if (!session) {
         console.log("No sessions found.");
@@ -327,6 +375,7 @@ program
       }
 
       console.log(`Session: ${session.session_id}`);
+      console.log(`  Tool: ${session.tool ?? "claude"}`);
       console.log(`  Name: ${session.session_name ?? "(none)"}`);
       console.log(`  CWD: ${session.cwd}`);
       console.log(`  Transcript: ${session.transcript_path}`);
@@ -379,11 +428,13 @@ program
   .description("Cancel armed state of a session")
   .option("--latest", "Use the latest session")
   .option("--session <id>", "Use a specific session ID")
+  .option("--tool <tool>", "Tool to operate on (claude or codex)", "claude")
   .action((opts) => {
     try {
+      const tool = opts.tool === "codex" ? "codex" : "claude";
       const session = opts.session
         ? getSession(opts.session)
-        : getLatestSession();
+        : getLatestSession(tool);
 
       if (!session) {
         console.error("No session found.");
