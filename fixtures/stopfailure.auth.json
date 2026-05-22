@@ -1,0 +1,9 @@
+{
+  "session_id": "abc123",
+  "transcript_path": "/home/user/.claude/projects/test/abc123.jsonl",
+  "cwd": "/home/user/projects/test",
+  "error": "authentication_failed",
+  "error_details": "Invalid API key",
+  "last_assistant_message": "",
+  "hook_event_name": "StopFailure"
+}

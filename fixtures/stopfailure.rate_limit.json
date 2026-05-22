@@ -1,0 +1,9 @@
+{
+  "session_id": "abc123",
+  "transcript_path": "/home/user/.claude/projects/test/abc123.jsonl",
+  "cwd": "/home/user/projects/test",
+  "error": "rate_limit",
+  "error_details": "API rate limit exceeded",
+  "last_assistant_message": "API Error: Rate limit reached. Resets at 13:50 UTC.",
+  "hook_event_name": "StopFailure"
+}

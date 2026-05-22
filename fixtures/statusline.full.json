@@ -1,0 +1,20 @@
+{
+  "session_id": "abc123",
+  "session_name": "test-session",
+  "transcript_path": "/home/user/.claude/projects/test/abc123.jsonl",
+  "cwd": "/home/user/projects/test",
+  "workspace": {
+    "current_dir": "/home/user/projects/test",
+    "project_dir": "/home/user/projects/test"
+  },
+  "rate_limits": {
+    "five_hour": {
+      "used_percentage": 99.8,
+      "resets_at": 1779443400
+    },
+    "seven_day": {
+      "used_percentage": 42.1,
+      "resets_at": 1779800000
+    }
+  }
+}
