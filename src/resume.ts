@@ -7,6 +7,7 @@ export interface ResumeOptions {
   dryRun?: boolean;
   printCommand?: boolean;
   force?: boolean;
+  tool?: "claude" | "codex";
 }
 
 export interface ResumePlan {
@@ -19,7 +20,7 @@ export interface ResumePlan {
 export function buildResumePlan(options: ResumeOptions): ResumePlan {
   const session = options.sessionId
     ? getSession(options.sessionId)
-    : getLatestSession();
+    : getLatestSession(options.tool);
 
   if (!session) {
     throw new Error(
@@ -39,7 +40,17 @@ export function buildResumePlan(options: ResumeOptions): ResumePlan {
     );
   }
 
-  const prompt = session.resume_prompt || defaultResumePrompt();
+  const tool = session.tool ?? "claude";
+  const prompt = session.resume_prompt || defaultResumePrompt(tool);
+
+  if (tool === "codex") {
+    return {
+      session,
+      command: "codex",
+      args: ["exec", "resume", session.session_id, prompt],
+      cwd: session.cwd || process.cwd(),
+    };
+  }
 
   return {
     session,
@@ -65,8 +76,9 @@ export function executeResume(plan: ResumePlan): number {
   return 0;
 }
 
-export function defaultResumePrompt(): string {
-  return `Continue from the previous Claude Code rate-limit interruption.
+export function defaultResumePrompt(tool?: "claude" | "codex"): string {
+  const name = tool === "codex" ? "Codex CLI" : "Claude Code";
+  return `Continue from the previous ${name} rate-limit interruption.
 
 Before making changes:
 1. Inspect the current repository state with git status and relevant recent files.
@@ -79,6 +91,15 @@ Before making changes:
 export function checkClaudeAvailable(): boolean {
   try {
     execSync("which claude", { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function checkCodexAvailable(): boolean {
+  try {
+    execSync("which codex", { stdio: "ignore" });
     return true;
   } catch {
     return false;
