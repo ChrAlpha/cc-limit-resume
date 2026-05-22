@@ -1,0 +1,7 @@
+{
+  "session_id": "019e3047-fef9-7b90-a8d3-5a7d89cb77cf",
+  "turn_id": "019e3047-fef9-7b90-a8d3-5a7d89cb77cf",
+  "stop_reason": "rate_limit",
+  "error": "Codex CLI: You've reached your 5-hour message limit. Try again in 3h 42m.",
+  "cwd": "/tmp/project"
+}
