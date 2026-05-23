@@ -6,7 +6,7 @@ import { loadIndex, getSession, getLatestSession, upsertSession, setArmed } from
 import { inferResetTime } from "./resetTime.js";
 import { countdownWait, formatCountdown, nowSeconds } from "./clock.js";
 import { processCodexStop } from "./codexStop.js";
-import { buildResumePlan, executeResume, checkClaudeAvailable, checkCodexAvailable, defaultResumePrompt } from "./resume.js";
+import { buildResumePlan, executeResume, checkClaudeAvailable, checkCodexAvailable, checkApiKeySet, defaultResumePrompt } from "./resume.js";
 import type { Session } from "./types.js";
 
 const program = new Command();
@@ -71,9 +71,12 @@ program
   .option("--transcript-path <path>", "Transcript path (manual only)")
   .option("--reset <reset>", "Manual reset time (manual only)")
   .option("--tool <tool>", "Tool to operate on (claude or codex)", "claude")
+  .option("--headless", "Use headless/API billing mode (claude -p) instead of interactive/subscription")
   .action((opts) => {
     try {
       let session: Session;
+
+      const headless = opts.headless === true;
 
       if (opts.manual) {
         if (!opts.session) {
@@ -111,6 +114,7 @@ program
           resume_prompt: opts.resumePrompt || defaultResumePrompt(opts.tool === "codex" ? "codex" : "claude"),
           manual_resets_at: manualResetsAt,
           tool: opts.tool === "codex" ? "codex" : "claude",
+          headless,
         };
       } else {
         const tool = opts.tool === "codex" ? "codex" : "claude";
@@ -136,7 +140,7 @@ program
         session.resume_prompt = resumePrompt;
         upsertSession(session);
       } else {
-        setArmed(session.session_id, true, maxRuns, resumePrompt);
+        setArmed(session.session_id, true, maxRuns, resumePrompt, headless);
       }
 
       console.error(`Session ${session.session_id} armed. Runs: 0/${maxRuns}`);
@@ -165,6 +169,7 @@ program
   .option("--margin-seconds <n>", "Extra margin in seconds", "60")
   .option("--dry-run", "Show what would happen without waiting")
   .option("--tool <tool>", "Tool to operate on (claude or codex)", "claude")
+  .option("--headless", "Use headless/API billing mode (claude -p) instead of interactive/subscription")
   .action(async (opts) => {
     try {
       const tool = opts.tool === "codex" ? "codex" : "claude";
@@ -260,6 +265,15 @@ program
         force: true, // Already checked armed/runs above
       });
 
+      if (!plan.session.headless && plan.session.tool !== "codex" && checkApiKeySet()) {
+        console.error(
+          "Warning: ANTHROPIC_API_KEY is set — resume will use API billing instead of subscription.",
+        );
+        console.error(
+          "Unset ANTHROPIC_API_KEY to use your subscription quota, or use --headless to suppress this warning.",
+        );
+      }
+
       console.error(`Resuming session ${session.session_id}...`);
       process.exit(executeResume(plan));
     } catch (err) {
@@ -279,6 +293,7 @@ program
   .option("--print-command", "Print the command that would be run")
   .option("--force", "Resume even if not armed or max runs exceeded")
   .option("--tool <tool>", "Tool to operate on (claude or codex)", "claude")
+  .option("--headless", "Use headless/API billing mode (claude -p) instead of interactive/subscription")
   .action((opts) => {
     try {
       const tool = opts.tool === "codex" ? "codex" : "claude";
@@ -327,6 +342,15 @@ program
           );
           process.exit(1);
         }
+      }
+
+      if (!plan.session.headless && plan.session.tool !== "codex" && checkApiKeySet()) {
+        console.error(
+          "Warning: ANTHROPIC_API_KEY is set — resume will use API billing instead of subscription.",
+        );
+        console.error(
+          "Unset ANTHROPIC_API_KEY to use your subscription quota, or use --headless to suppress this warning.",
+        );
       }
 
       console.error(`Resuming session ${plan.session.session_id}...`);

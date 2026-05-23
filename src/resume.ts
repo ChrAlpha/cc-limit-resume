@@ -52,10 +52,14 @@ export function buildResumePlan(options: ResumeOptions): ResumePlan {
     };
   }
 
+  const headless = session.headless === true;
+
   return {
     session,
     command: "claude",
-    args: ["--resume", session.session_id, "-p", prompt],
+    args: headless
+      ? ["--resume", session.session_id, "-p", prompt]
+      : ["--resume", session.session_id],
     cwd: session.cwd || process.cwd(),
   };
 }
@@ -104,4 +108,8 @@ export function checkCodexAvailable(): boolean {
   } catch {
     return false;
   }
+}
+
+export function checkApiKeySet(): boolean {
+  return !!process.env.ANTHROPIC_API_KEY;
 }

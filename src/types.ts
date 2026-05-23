@@ -25,6 +25,7 @@ export interface Session {
   runs_used: number;
   resume_prompt: string;
   tool?: "claude" | "codex";
+  headless?: boolean;
 }
 
 export interface IndexData {

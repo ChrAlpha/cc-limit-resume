@@ -129,11 +129,13 @@ export function setArmed(
   armed: boolean,
   maxRuns?: number,
   resumePrompt?: string,
+  headless?: boolean,
 ): IndexData {
   return updateSession(sessionId, (s) => {
     s.armed = armed;
     if (maxRuns !== undefined) s.max_runs = maxRuns;
     if (resumePrompt !== undefined) s.resume_prompt = resumePrompt;
+    if (headless !== undefined) s.headless = headless;
   });
 }
 
