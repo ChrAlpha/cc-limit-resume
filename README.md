@@ -8,7 +8,7 @@ When you hit a rate limit in Claude Code, `cc-limit-resume` lets you:
 
 1. **Arm** the session (marks it for one-shot resume).
 2. **Wait** until the reported reset time plus a safety margin.
-3. **Resume** the session automatically using `claude --resume <session-id> -p <resume-prompt>`.
+3. **Resume** the session using `claude --resume <session-id>` (interactive, subscription billing) or `claude --resume <session-id> -p <resume-prompt>` (headless, API/Agent SDK billing).
 
 It stores minimal local state under `~/.local/state/cc-limit-resume/` (or `~/Library/Application Support/cc-limit-resume/` on macOS).
 
@@ -22,6 +22,21 @@ It stores minimal local state under `~/.local/state/cc-limit-resume/` (or `~/Lib
 - Does **not** auto-retry. You must explicitly run `cc-limit-resume wait`.
 - Does **not** restore interrupted subprocesses or subagents — it resumes from transcript and repository state.
 - Does **not** send telemetry, analytics, or network requests.
+
+## Billing and quota
+
+By default, `cc-limit-resume` resumes Claude Code in **interactive mode** (`claude --resume <id>`), which draws from your **subscription usage pool** (Max / Pro / Team). This is usually what you want.
+
+Use `--headless` on `arm`, `wait`, or `resume` to switch to **headless mode** (`claude --resume <id> -p <prompt>`), which draws from the **Agent SDK credit pool** or **API key billing**.
+
+| Mode | Command | Billing |
+|------|---------|---------|
+| Default (interactive) | `claude --resume <id>` | Subscription usage pool (Max/Pro/Team) |
+| `--headless` | `claude --resume <id> -p <prompt>` | Agent SDK credits or API pay-per-token |
+
+**API key warning:** If `ANTHROPIC_API_KEY` is set in your environment, it overrides your subscription — all usage bills per-token regardless of mode. `cc-limit-resume` will warn you when this is detected. Unset `ANTHROPIC_API_KEY` to use your subscription quota, or pass `--headless` to suppress the warning.
+
+Codex CLI resumes (`--tool codex`) are unaffected by this setting.
 
 ## First to Use
 
@@ -89,7 +104,7 @@ This will:
 - Display the inferred reset time.
 - Show a countdown (updates every 30 seconds).
 - Wait until reset time + 60-second margin.
-- Then automatically run `claude --resume <session-id> -p <resume-prompt>`.
+- Then automatically run `claude --resume <session-id>` (interactive, subscription billing by default; use `--headless` for API/Agent SDK mode).
 
 ### 5. Manual bootstrap (if no statusline data)
 
@@ -110,15 +125,20 @@ cc-limit-resume arm --manual \
 | `cc-limit-resume arm --latest` | Mark latest session as armed for one-shot resume |
 | `cc-limit-resume arm --session <id>` | Arm a specific session |
 | `cc-limit-resume arm --manual ...` | Bootstrap a session manually |
+| `cc-limit-resume arm --latest --headless` | Arm with headless/API billing mode |
+| `cc-limit-resume arm --latest --tool codex` | Arm a Codex CLI session |
 | `cc-limit-resume wait --latest` | Wait for reset time then resume |
 | `cc-limit-resume wait --latest --dry-run` | Show what would happen without waiting |
 | `cc-limit-resume wait --latest --reset "<time>"` | Override the inferred reset time |
 | `cc-limit-resume wait --latest --margin-seconds 120` | Use a larger safety margin |
+| `cc-limit-resume wait --latest --headless` | Resume in headless/API billing mode |
 | `cc-limit-resume resume --latest` | Resume immediately without waiting |
 | `cc-limit-resume resume --latest --print-command` | Print the claude command that would run |
 | `cc-limit-resume resume --latest --dry-run` | Show plan without executing |
+| `cc-limit-resume resume --latest --headless` | Resume in headless/API billing mode |
 | `cc-limit-resume status` | Show current state |
 | `cc-limit-resume status --json` | Show state as JSON |
+| `cc-limit-resume status --tool codex` | Show only Codex sessions |
 | `cc-limit-resume cancel --latest` | Disarm the latest session |
 
 ## Plugin installation
@@ -185,6 +205,7 @@ State is stored as plain JSON. No database. No daemon. To reset everything, dele
 - Atomic writes (temp file + rename) prevent corruption.
 - Corrupt state is backed up as `index.corrupt.<timestamp>.json` rather than crashing.
 - The tool calls `claude --resume` with your exact session ID and prompt — it never modifies or reads your API keys.
+- It does read `ANTHROPIC_API_KEY` from the environment to warn you when resume would bypass your subscription billing.
 
 ## Limitations
 
@@ -193,6 +214,7 @@ State is stored as plain JSON. No database. No daemon. To reset everything, dele
 - Requires manual setup of statusline/StopFailure hooks.
 - Only supports one active armed session at a time (the "latest" model).
 - The wait command blocks the terminal during countdown (Ctrl+C to cancel).
+- Default interactive resume opens a new interactive Claude Code session — not suitable for fully unattended/headless environments (use `--headless` for those).
 
 ## License
 
