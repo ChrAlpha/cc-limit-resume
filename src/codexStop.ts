@@ -19,6 +19,23 @@ export function parseCodexStopInput(raw: unknown): CodexStopInput {
   return raw as CodexStopInput;
 }
 
+const RATE_LIMIT_PATTERNS = [
+  "rate limit",
+  "rate_limit",
+  "message limit",
+  "quota exceeded",
+  "usage limit",
+  "try again in",
+  "resets in",
+  "resets at",
+];
+
+function detectRateLimitFromMessage(message: string | null | undefined): boolean {
+  if (!message) return false;
+  const lower = message.toLowerCase();
+  return RATE_LIMIT_PATTERNS.some((p) => lower.includes(p));
+}
+
 export function applyCodexStop(input: CodexStopInput): Session | null {
   const sessionId = input.session_id;
   if (!sessionId) {
@@ -26,10 +43,7 @@ export function applyCodexStop(input: CodexStopInput): Session | null {
     return null;
   }
 
-  const isRateLimit =
-    input.stop_reason === "rate_limit" ||
-    input.error?.toLowerCase().includes("rate limit") ||
-    input.error?.toLowerCase().includes("rate_limit");
+  const isRateLimit = detectRateLimitFromMessage(input.last_assistant_message);
 
   if (!isRateLimit) {
     return null;
@@ -44,7 +58,7 @@ export function applyCodexStop(input: CodexStopInput): Session | null {
     session = {
       session_id: sessionId,
       cwd: input.cwd ?? "",
-      transcript_path: "",
+      transcript_path: input.transcript_path ?? "",
       armed: false,
       created_at: now,
       updated_at: now,
@@ -55,13 +69,16 @@ export function applyCodexStop(input: CodexStopInput): Session | null {
     };
   } else {
     if (input.cwd !== undefined) session.cwd = input.cwd;
+    if (input.transcript_path !== undefined && input.transcript_path !== null) {
+      session.transcript_path = input.transcript_path;
+    }
     session.tool = "codex";
   }
 
   session.last_failure_at = now;
   session.last_failure_error = "rate_limit";
-  if (input.error !== undefined) {
-    session.last_assistant_message = input.error;
+  if (input.last_assistant_message !== undefined && input.last_assistant_message !== null) {
+    session.last_assistant_message = input.last_assistant_message;
   }
 
   upsertSession(session);

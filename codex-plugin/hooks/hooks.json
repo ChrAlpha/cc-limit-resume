@@ -1,8 +1,15 @@
 {
   "hooks": {
-    "Stop": {
-      "command": "cc-limit-resume tap-codex-stop",
-      "matcher": ""
-    }
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cc-limit-resume tap-codex-stop",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
   }
 }

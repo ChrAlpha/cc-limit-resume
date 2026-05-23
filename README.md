@@ -82,6 +82,30 @@ Add this to the same hooks section:
 
 This records rate-limit and other stop failures automatically.
 
+### 2a. Wire up Codex Stop hook (for Codex CLI users)
+
+If you use Codex CLI, install the [Codex plugin](#codex-cli-plugin) and add this to `~/.codex/hooks.json`:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cc-limit-resume tap-codex-stop",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Enable hooks with `codex features enable codex_hooks`. See the plugin installation section for full Codex setup.
+
 ### 3. Arm the session
 
 When you know you're about to be rate-limited, or immediately after a rate-limit stop:
@@ -161,6 +185,85 @@ The plugin provides:
 - A `/limit-resume-arm` skill to arm sessions from within Claude Code.
 - A StopFailure hook to automatically log failures.
 
+### Codex CLI plugin
+
+The Codex plugin provides `--tool codex` session tracking and `codex exec resume` support. It requires explicit hook setup since Codex does not currently support plugin-bundled hooks.
+
+**Step 1: Install the Codex plugin**
+
+```bash
+# From npm
+ln -s "$(npm root -g)/cc-limit-resume/codex-plugin" ~/.codex/plugins/cc-limit-resume
+
+# From source
+ln -s "$(pwd)/codex-plugin" ~/.codex/plugins/cc-limit-resume
+```
+
+**Step 2: Enable hooks in Codex**
+
+```bash
+codex features enable codex_hooks
+```
+
+Or add to `~/.codex/config.toml`:
+
+```toml
+[features]
+codex_hooks = true
+```
+
+**Step 3: Add the Stop hook**
+
+Add this to `~/.codex/hooks.json`:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cc-limit-resume tap-codex-stop",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+This Stop hook fires when Codex finishes a turn (including rate-limit stops). `cc-limit-resume` parses the assistant message text for rate-limit indicators and records the session state for later resume.
+
+**Step 4: Verify**
+
+```bash
+cc-limit-resume status --tool codex
+```
+
+**Codex resume flow:**
+
+```bash
+# Arm the latest Codex session
+cc-limit-resume arm --latest --tool codex
+
+# Wait for reset then resume via codex exec resume
+cc-limit-resume wait --latest --tool codex
+
+# Or resume immediately
+cc-limit-resume resume --latest --tool codex
+```
+
+The Codex resume command runs `codex exec --skip-git-repo-check resume <session_id> <prompt>`. The original session's model, sandbox mode, and approval settings are inherited.
+
+**Known Codex limitations:**
+
+- Codex does not support plugin-bundled hooks; the Stop hook must be manually added to `~/.codex/hooks.json`.
+- Codex Stop hook payloads do not include dedicated `stop_reason` or `error` fields. Rate-limit detection parses `last_assistant_message` text for keywords ("rate limit", "message limit", "quota exceeded", "try again in", etc.). This is best-effort and may miss edge cases.
+- There is a [known Codex bug](https://github.com/openai/codex/issues/8310) where resuming after a rate limit may lose task context. Consider creating a `SESSION_HANDOFF.md` checkpoint file before hitting limits.
+- `codex exec resume` only supports headless mode (no interactive TUI resume from automation). Interactive resume via `codex resume` is not supported by this tool.
+
 ## Development
 
 ```bash
@@ -215,6 +318,9 @@ State is stored as plain JSON. No database. No daemon. To reset everything, dele
 - Only supports one active armed session at a time (the "latest" model).
 - The wait command blocks the terminal during countdown (Ctrl+C to cancel).
 - Default interactive resume opens a new interactive Claude Code session — not suitable for fully unattended/headless environments (use `--headless` for those).
+- Codex rate-limit detection is best-effort: the Codex Stop hook does not include dedicated error/stop_reason fields, so we parse the assistant message text for rate-limit keywords. Unusual phrasings may be missed.
+- Codex does not support plugin-bundled hooks; its Stop hook must be installed manually into `~/.codex/hooks.json`.
+- `codex exec resume` inherits the original session's model, sandbox, and approval settings — you cannot override them on resume.
 
 ## License
 

@@ -67,8 +67,12 @@ export interface StopFailureInput {
 
 export interface CodexStopInput {
   session_id?: string;
-  stop_reason?: string;
-  error?: string;
+  transcript_path?: string | null;
   cwd?: string;
-  [key: string]: unknown;
+  hook_event_name?: string;
+  model?: string;
+  permission_mode?: string;
+  turn_id?: string;
+  last_assistant_message?: string | null;
+  stop_hook_active?: boolean;
 }

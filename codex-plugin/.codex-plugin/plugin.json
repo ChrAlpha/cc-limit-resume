@@ -1,0 +1,19 @@
+{
+  "name": "cc-limit-resume-codex",
+  "version": "0.1.0",
+  "description": "Rate-limit resume hook plugin for Codex CLI — detects rate-limit stops and arms sessions for explicit resume via codex exec resume.",
+  "author": {
+    "name": "cc-limit-resume contributors"
+  },
+  "license": "MIT",
+  "keywords": ["rate-limit", "resume", "codex"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "CC Limit Resume (Codex)",
+    "shortDescription": "Detect rate-limit stops and arm sessions for explicit resume.",
+    "longDescription": "Captures Codex CLI Stop hook events, detects rate-limit stops by parsing assistant messages, and arms sessions for explicit one-shot resume via `codex exec resume`. This plugin does not auto-retry or bypass rate limits.",
+    "developerName": "cc-limit-resume contributors",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"]
+  }
+}

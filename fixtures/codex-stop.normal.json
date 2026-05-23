@@ -1,6 +1,11 @@
 {
   "session_id": "019e3047-fef9-7b90-a8d3-5a7d89cb77cf",
   "turn_id": "019e3047-fef9-7b90-a8d3-5a7d89cb77cf",
-  "stop_reason": "end_turn",
-  "cwd": "/tmp/project"
+  "transcript_path": "/home/user/.codex/sessions/2026/05/23/session.jsonl",
+  "cwd": "/tmp/project",
+  "hook_event_name": "Stop",
+  "model": "gpt-5.4",
+  "permission_mode": "default",
+  "last_assistant_message": "I've completed the requested refactoring. All tests pass and the build succeeds.",
+  "stop_hook_active": false
 }

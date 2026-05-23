@@ -47,7 +47,7 @@ export function buildResumePlan(options: ResumeOptions): ResumePlan {
     return {
       session,
       command: "codex",
-      args: ["exec", "resume", session.session_id, prompt],
+      args: ["exec", "--skip-git-repo-check", "resume", session.session_id, prompt],
       cwd: session.cwd || process.cwd(),
     };
   }
